@@ -44,15 +44,7 @@ const resolvers = {
       return await context.task.user.findUnique({ where: { email } });
     },
     protected: (_, __, context) => {
-      console.log(context.currentUser);
-
-      if (!context.currentUser)
-        throw new GraphQLError('Failed ot access protected resource', {
-          extensions: {
-            code: 'USER_NOT_AUTH',
-          },
-        });
-      return context.currentUser;
+      return isAuthenticated(context);
     },
   },
   Mutation: {
@@ -84,22 +76,38 @@ const server = new ApolloServer({
 
 startStandaloneServer(server, {
   listen: { port: 4000 },
-  context: async ({ req }) => {
-    const auth = req ? req.headers.authorization : null;
-
-    // if (!auth || !auth.toLowerCase().includes('bearer'))
-    //   throw new GraphQLError('USER_NOT_AUTH');
-    const token = auth && auth.split(' ')[1];
-
-    const decoded = token && (verify(token, 'secret_key') as JwtPayload);
-    let id = decoded && (decoded as unknown as JwtPayload).id;
-
-    const currentUser = token
-      ? await prisma.user.findUnique({
-          where: { id },
-        })
-      : null;
-
-    return { task: prisma, currentUser };
-  },
+  context: ({ ...args }) => createContext({ ...args }),
 }).then(({ url }) => console.log(`Server running at ${url}`));
+
+// helper functions
+// create our custom context
+async function createContext({ req, res }) {
+  const currentUser = await attachAuthUser(req);
+
+  return { task: prisma, currentUser };
+}
+
+// add this to any resolver to ensure use is authed
+function isAuthenticated(ctx) {
+  if (!ctx.currentUser)
+    throw new GraphQLError('Failed to access protected resource', {
+      extensions: {
+        code: 'USER_NOT_AUTH',
+      },
+    });
+  return ctx.currentUser;
+}
+
+// attach authenticated user to context
+async function attachAuthUser(req) {
+  const auth = req ? req.headers.authorization : null;
+  if (!auth) return null;
+  const validToken = auth.toLowerCase().includes('bearer ')
+    ? auth.split(' ')[1]
+    : null;
+  if (!validToken) return null;
+  const { id } = verify(validToken, 'secret_key') as unknown as JwtPayload;
+
+  const authUser = id ? await prisma.user.findUnique({ where: { id } }) : null;
+  return authUser;
+}
