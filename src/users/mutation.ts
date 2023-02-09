@@ -5,7 +5,7 @@ import { addSendEmailJob } from '../queue';
 export const userMutation = {
   register: async (_, { username, email, password }, context) => {
     // add email to emailJobQueue
-    await addSendEmailJob(`sendEmailTo${username}`, { email });
+    // await addSendEmailJob(`sendEmailTo${username}`, { email });
     return await context.task.user.create({
       data: {
         username,
