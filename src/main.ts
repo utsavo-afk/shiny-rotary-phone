@@ -2,33 +2,8 @@ import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { userMutation } from './users/mutation';
 import { userQuery } from './users/query';
+import { userTypeDefs } from './users/type';
 import { createContext } from './utils/helpers';
-
-const typeDefs = `#graphql
-    type User {
-        username: String!
-        email: String!
-        password: String!
-        id: ID!
-    }
-
-    type AuthPayload {
-      token: String
-      user: User
-    }
-
-    type Query {
-        userCount: Int!
-        allUsers: [User!]!
-        findUser(email: String!): User
-        protected: User
-    }
-
-    type Mutation {
-      register(email: String!, username: String!, password: String!): User
-      login(email: String!, password: String!): AuthPayload
-    }
-`;
 
 const resolvers = {
   Query: {
@@ -40,7 +15,7 @@ const resolvers = {
 };
 
 const server = new ApolloServer({
-  typeDefs,
+  typeDefs: [userTypeDefs],
   resolvers,
 });
 
