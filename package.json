@@ -21,6 +21,7 @@
   "dependencies": {
     "@apollo/server": "^4.3.3",
     "@prisma/client": "^4.10.0",
+    "bullmq": "^3.6.4",
     "graphql": "^16.6.0",
     "jsonwebtoken": "^9.0.0"
   }
